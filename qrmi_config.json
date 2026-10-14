@@ -1,0 +1,34 @@
+{
+  "resources": [
+    {
+      "name": "ibm_marrakesh",
+      "type": "qiskit-runtime-service",
+      "environment": {
+        "QRMI_IBM_QRS_ENDPOINT": "https://quantum.cloud.ibm.com/api/v1",
+        "QRMI_IBM_QRS_IAM_ENDPOINT": "https://iam.cloud.ibm.com",
+        "QRMI_IBM_QRS_SERVICE_CRN": "crn:v1:bluemix:public:quantum-computing:us-east:a/28c9827169904cc68b12d7b4165cc6b6:9d513695-3574-4cc7-be24-1c68376c50f4::",
+        "QRMI_IBM_QRS_SESSION_MODE": "batch"
+      }
+    },
+    {
+      "name": "ibm_fez",
+      "type": "qiskit-runtime-service",
+      "environment": {
+        "QRMI_IBM_QRS_ENDPOINT": "https://quantum.cloud.ibm.com/api/v1",
+        "QRMI_IBM_QRS_IAM_ENDPOINT": "https://iam.cloud.ibm.com",
+        "QRMI_IBM_QRS_SERVICE_CRN": "crn:v1:bluemix:public:quantum-computing:us-east:a/28c9827169904cc68b12d7b4165cc6b6:9d513695-3574-4cc7-be24-1c68376c50f4::",
+        "QRMI_IBM_QRS_SESSION_MODE": "batch"
+      }
+    },
+    {
+      "name": "ibm_kingston",
+      "type": "qiskit-runtime-service",
+      "environment": {
+        "QRMI_IBM_QRS_ENDPOINT": "https://quantum.cloud.ibm.com/api/v1",
+        "QRMI_IBM_QRS_IAM_ENDPOINT": "https://iam.cloud.ibm.com",
+        "QRMI_IBM_QRS_SERVICE_CRN": "crn:v1:bluemix:public:quantum-computing:us-east:a/28c9827169904cc68b12d7b4165cc6b6:9d513695-3574-4cc7-be24-1c68376c50f4::",
+        "QRMI_IBM_QRS_SESSION_MODE": "batch"
+      }
+    }
+  ]
+}

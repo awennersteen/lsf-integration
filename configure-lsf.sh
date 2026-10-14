@@ -21,10 +21,14 @@ cp /tmp/lsb.hosts ${CONFDIR}/lsbatch/cluster1/configdir/lsb.hosts
 
 echo "$0: Install QRMI hooks"
 cp /distribution/jobstarter.qrmi /opt/lsfce/10.1/linux3.12-glibc2.17-armv8/etc
-cp /distribution/postexec.qrmi /opt/lsfce/10.1/linux3.12-glibc2.17-armv8/etc
+# Set JOB_STARTER, REQUEUE_EXIT_VALUES, MAX_JOB_REQUEUE for the
+# normal and interactive queues
 cp ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues.orig
-sed -e "s/^QUEUE_NAME   = normal$/QUEUE_NAME   = normal\nJOB_STARTER  = \/opt\/lsfce\/10.1\/linux3.12-glibc2.17-armv8\/etc\/jobstarter.qrmi\nPOST_EXEC    = \/opt\/lsfce\/10.1\/linux3.12-glibc2.17-armv8\/etc\/postexec.qrmi/g" -e "s/^QUEUE_NAME   = interactive$/QUEUE_NAME   = interactive\nJOB_STARTER  = \/opt\/lsfce\/10.1\/linux3.12-glibc2.17-armv8\/etc\/jobstarter.qrmi\nPOST_EXEC    = \/opt\/lsfce\/10.1\/linux3.12-glibc2.17-armv8\/etc\/postexec.qrmi/g" ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues > /tmp/lsb.queues
+sed -e "s/^QUEUE_NAME   = normal$/QUEUE_NAME   = normal\nJOB_STARTER  = \/opt\/lsfce\/10.1\/linux3.12-glibc2.17-armv8\/etc\/jobstarter.qrmi\nREQUEUE_EXIT_VALUES = 99\nMAX_JOB_REQUEUE = 3/g" -e "s/^QUEUE_NAME   = interactive$/QUEUE_NAME   = interactive\nJOB_STARTER  = \/opt\/lsfce\/10.1\/linux3.12-glibc2.17-armv8\/etc\/jobstarter.qrmi\nREQUEUE_EXIT_VALUES = 99\nMAX_JOB_REQUEUE = 3/g" ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues > /tmp/lsb.queues
 cp /tmp/lsb.queues ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues
+
+echo "$0: Copy publically accessible qrmi_config.json in LSF_ENVDIR"
+cp /distribution/qrmi_config.json ${CONFDIR}
 
 echo "$0: Install QRMI venv for hooks"
 python3 -m venv /opt/lsfce/pyenv

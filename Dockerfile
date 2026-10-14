@@ -59,8 +59,8 @@ RUN chmod +x \
 
 COPY jobstarter.qrmi /distribution
 COPY postexec.qrmi /distribution
+COPY qrmi_config.json /distribution
 
-COPY qrmi_config.json.example /distribution
 COPY examples/ /distribution/examples/
 
 CMD ["/usr/local/bin/docker-entrypoint.sh"]
