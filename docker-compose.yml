@@ -114,12 +114,74 @@ services:
       lsfnet:
         ipv4_address: 10.10.10.12
 
+  qsa_sim:
+    build:
+      context: ../simulated_quantum_resource
+      dockerfile: Dockerfile
+    container_name: qsa_sim
+    env_file:
+      - .env
+    ports:
+      - ${QSASIM_BIND_PORT}:${QSASIM_BIND_PORT}
+    networks:
+      lsfnet:
+        ipv4_address: 10.10.10.13
+    depends_on:
+      createbuckets:
+        condition: service_completed_successfully
+
+  s3_proxy:
+    image: alpine/socat
+    container_name: s3_proxy
+    network_mode: "service:qsa_sim"
+    command: TCP-LISTEN:${S3_PORT:-9000},fork,reuseaddr TCP:rustfs:9000
+    depends_on:
+      - qsa_sim
+      - rustfs
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs
+    ports:
+      - ${S3_PORT:-9000}:9000
+      - ${S3_CONSOLE_PORT:-9001}:9001
+    volumes:
+      - rustfs_data:/data
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-rustfsadmin}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-rustfsadmin}
+      RUSTFS_REGION: ${S3_REGION:-us-east-1}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  createbuckets:
+    image: rustfs/rc:latest
+    container_name: createbuckets
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/rc alias set s3 http://rustfs:9000 ${S3_ACCESS_KEY:-rustfsadmin} ${S3_SECRET_KEY:-rustfsadmin} --region ${S3_REGION:-us-east-1} --bucket-lookup path &&
+      /usr/bin/rc bucket create s3/${S3_BUCKET_NAME:-mybucket} --ignore-existing &&
+      /usr/bin/rc anonymous set public s3/${S3_BUCKET_NAME:-mybucket}
+      "
+
 volumes:
   lsf_install:
   shared_fs:
   ssh_keys:
   lsfadmin_home:  # Shared volume for lsfadmin
   lsfuser_home:   # Shared volume for lsfuser
+  rustfs_data:
 
 networks:
   lsfnet:

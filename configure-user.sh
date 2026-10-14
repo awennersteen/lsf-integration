@@ -4,10 +4,8 @@ set -e
 
 CONFDIR="/opt/lsfce/conf"
 
-echo "$0: Set up lsfuser qrmi_config.json, examples, venv"
-cp /distribution/qrmi_config.json.example /home/lsfuser
+echo "$0: Set up lsfuser examples, venv"
 cp -r /distribution/examples /home/lsfuser
-chmod 600 /home/lsfuser/qrmi_config.json.example
 python3 -m venv /home/lsfuser/pyenv
 source /home/lsfuser/pyenv/bin/activate
 pip install --upgrade pip
