@@ -35,6 +35,7 @@ RES_TYPE_MAP = {
 QRMI_LIST_DELIMITER = ","
 
 qrmi_resources = {}
+acquired_resources = {}
 
 # Print message to stderr
 def print_debug(message):
@@ -80,65 +81,67 @@ def acquire_token(qrmi):
 # QRMI_QPU_RESOURCES indicates if we have a quantum job
 resources = os.getenv("QRMI_QPU_RESOURCES")
 job_args = sys.argv[1:]
-if resources:
-    debug = os.getenv("LSF_QRMI_DEBUG")
-    cfg_path = os.path.join(os.getenv("LSF_ENVDIR"), "qrmi_config.json")
-    with open(cfg_path, "r", encoding="utf8") as f:
-        cfg_json = json.load(f)
-        cfg_by_name = {r["name"]: r for r in cfg_json["resources"]}
-
-        managed_resources = {}
-        for name in resources.split(QRMI_LIST_DELIMITER):
-            print_debug(f"Checking {name}")
-            name = name.strip()
-            if not (cfg := cfg_by_name.get(name)):
-                print_debug(f"{name} not found in qrmi_config.json. Ignored.")
-                continue
-
-            try:
-                qrmi = QuantumResource.from_config(name, RES_TYPE_MAP[cfg["type"]], build_config_map(name, cfg))
-                qrmi_resources[name] = qrmi
-                print_debug(f"resource_type = {qrmi.resource_type()}, resource_id={qrmi.resource_id()}")
-                status = qrmi.status()
-                print_debug(f"status = {json.dumps(status.to_dict(), indent=2)}")
-                if status.status != ResourceStatusCode.Online:
-		    # The quantum resource cannot accept jobs due
-		    # to maintenance, calibration, or other operational
-		    # activities. Put it back on the queue. Note that
-		    # the 99 exit code must be defined in lsb.queues
-		    # (REQUEUE_EXIT_VALUES)
-                    print_debug(f"{name} is inaccessible. Ignored.")
-                    exit(99)
-                acquire_token(qrmi)
-                managed_resources[qrmi.resource_id()] = cfg["type"]
-            except RuntimeError as re:
-                print_error(f"Failed to process request in QRMI for {name}: {re}")
-
-    if len(managed_resources) == 0:
-        print_error(f"No specified quantum resources ({resources}) are available")
-        exit(1)
-
-    # Expose allocated quantum resources to the QRMI job.
-    #
-    # QRMI_JOB_QPU_RESOURCES: Delimiter-separated list of logical
-    # resource names allocated to this job. These names correspond
-    # to the resource definitions in the scheduler configuration
-    # and are used when constructing resource-specific environment
-    # variables such as <RESOURCE_NAME>_QRMI_JOB_ACQUISITION_TOKEN.
-    #
-    # QRMI_JOB_QPU_TYPES: Delimiter-separated list of QPU types
-    # corresponding to the resources listed in QRMI_JOB_QPU_RESOURCES.
-    # The nth entry in QRMI_JOB_QPU_TYPES describes the nth resource
-    # in QRMI_JOB_QPU_RESOURCES.
-    #
-    # QRMI_LIST_DELIMITER: Delimiter used to encode list-valued
-    # QRMI environment variables. Consumers should use this value
-    # rather than assuming a fixed separator character.
-    set_env("QRMI_JOB_QPU_RESOURCES", QRMI_LIST_DELIMITER.join(managed_resources.keys()))
-    set_env("QRMI_JOB_QPU_TYPES", QRMI_LIST_DELIMITER.join(managed_resources.values()))
-    set_env("QRMI_LIST_DELIMITER", QRMI_LIST_DELIMITER)
 
 try:
+    if resources:
+        debug = os.getenv("LSF_QRMI_DEBUG")
+        cfg_path = os.path.join(os.getenv("LSF_ENVDIR"), "qrmi_config.json")
+        with open(cfg_path, "r", encoding="utf8") as f:
+            cfg_json = json.load(f)
+            cfg_by_name = {r["name"]: r for r in cfg_json["resources"]}
+
+            managed_resources = {}
+            for name in resources.split(QRMI_LIST_DELIMITER):
+                print_debug(f"Checking {name}")
+                name = name.strip()
+                if not (cfg := cfg_by_name.get(name)):
+                    print_debug(f"{name} not found in qrmi_config.json. Ignored.")
+                    continue
+
+                try:
+                    qrmi = QuantumResource.from_config(name, RES_TYPE_MAP[cfg["type"]], build_config_map(name, cfg))
+                    qrmi_resources[name] = qrmi
+                    print_debug(f"resource_type = {qrmi.resource_type()}, resource_id={qrmi.resource_id()}")
+                    status = qrmi.status()
+                    print_debug(f"status = {json.dumps(status.to_dict(), indent=2)}")
+                    if status.status != ResourceStatusCode.Online:
+                    # The quantum resource cannot accept jobs due
+                    # to maintenance, calibration, or other operational
+                    # activities. Put it back on the queue. Note that
+                    # the 99 exit code must be defined in lsb.queues
+                    # (REQUEUE_EXIT_VALUES)
+                        print_debug(f"{name} is inaccessible. Ignored.")
+                        raise SystemExit(99)
+                    acquire_token(qrmi)
+                    acquired_resources[name] = qrmi
+                    managed_resources[qrmi.resource_id()] = cfg["type"]
+                except RuntimeError as re:
+                    print_error(f"Failed to process request in QRMI for {name}: {re}")
+
+        if len(managed_resources) == 0:
+            print_error(f"No specified quantum resources ({resources}) are available")
+            exit(1)
+
+        # Expose allocated quantum resources to the QRMI job.
+        #
+        # QRMI_JOB_QPU_RESOURCES: Delimiter-separated list of logical
+        # resource names allocated to this job. These names correspond
+        # to the resource definitions in the scheduler configuration
+        # and are used when constructing resource-specific environment
+        # variables such as <RESOURCE_NAME>_QRMI_JOB_ACQUISITION_TOKEN.
+        #
+        # QRMI_JOB_QPU_TYPES: Delimiter-separated list of QPU types
+        # corresponding to the resources listed in QRMI_JOB_QPU_RESOURCES.
+        # The nth entry in QRMI_JOB_QPU_TYPES describes the nth resource
+        # in QRMI_JOB_QPU_RESOURCES.
+        #
+        # QRMI_LIST_DELIMITER: Delimiter used to encode list-valued
+        # QRMI environment variables. Consumers should use this value
+        # rather than assuming a fixed separator character.
+        set_env("QRMI_JOB_QPU_RESOURCES", QRMI_LIST_DELIMITER.join(managed_resources.keys()))
+        set_env("QRMI_JOB_QPU_TYPES", QRMI_LIST_DELIMITER.join(managed_resources.values()))
+        set_env("QRMI_LIST_DELIMITER", QRMI_LIST_DELIMITER)
+
     # Launch the user job. Quantum job is expected to acquire QRMI
     # resources and store acquisition tokens through environment
     # variables, eg, # <RESOURCE_NAME>_QRMI_JOB_ACQUISITION_TOKEN.
@@ -154,7 +157,7 @@ finally:
 	# Note that this cleanup executes only while the launcher
 	# process remains alive. It cannot run after an external
 	# SIGKILL.
-        for name, qrmi in qrmi_resources.items():
+        for name, qrmi in acquired_resources.items():
 	    # Token generated during acquisition and propagated
 	    # through the job environment.
             token = os.getenv(f"{name}_QRMI_JOB_ACQUISITION_TOKEN")
@@ -162,7 +165,7 @@ finally:
 		# Missing token likely indicates that acquisition
 		# never occurred, the environment variable was not
 		# propagated, or the job modified/removed it.
-                print_error(f"Missing token for {name}")
+                print(f"Missing token for {name}", file=sys.stderr)
                 continue
             try:
                 qrmi.release(token)
@@ -170,7 +173,7 @@ finally:
             except RuntimeError as re:
 		# Release failures are logged and do not prevent
 		# cleanup attempts for other resources
-                print_error(f"{name} release failed: {re}")
+                print(f"{name} release failed: {re}", file=sys.stderr)
 # Propagate application exit status to LSF.
 # Python returns negative codes when subprocesses terminate by signal.
 if return_code < 0:
