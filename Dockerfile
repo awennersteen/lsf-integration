@@ -58,7 +58,6 @@ RUN chmod +x \
     /usr/local/bin/configure-user.sh
 
 COPY jobstarter.qrmi /distribution
-COPY postexec.qrmi /distribution
 COPY qrmi_config.json /distribution
 
 COPY examples/ /distribution/examples/
