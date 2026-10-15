@@ -144,7 +144,8 @@ try:
     # variables, eg, # <RESOURCE_NAME>_QRMI_JOB_ACQUISITION_TOKEN.
     # Tokens are required to release the resource when the job
     # completes.
-    subprocess.run(job_args)
+    result = subprocess.run(job_args)
+    return_code = result.returncode
 finally:
     if resources:
 	# Always attempt resource cleanup, regardless of job success,
@@ -170,3 +171,8 @@ finally:
 		# Release failures are logged and do not prevent
 		# cleanup attempts for other resources
                 print_error(f"{name} release failed: {re}")
+# Propagate application exit status to LSF.
+# Python returns negative codes when subprocesses terminate by signal.
+if return_code < 0:
+    return_code = 128 - return_code
+sys.exit(return_code)
