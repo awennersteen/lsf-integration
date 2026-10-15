@@ -1,5 +1,8 @@
 FROM ubuntu:24.04
 
+ARG LSF_TAR
+ENV LSF_TAR=${LSF_TAR}
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
@@ -44,7 +47,7 @@ RUN groupadd -g 1002 lsfuser && \
 
 RUN echo "root:root" | chpasswd
 
-COPY lsfsce10.2.0.15-armv8.tar.Z /distribution/
+COPY ${LSF_TAR} /distribution/
 
 COPY docker-entrypoint.sh /usr/local/bin
 COPY install-lsf.sh /usr/local/bin

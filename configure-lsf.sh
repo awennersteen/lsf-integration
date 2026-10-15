@@ -20,11 +20,12 @@ sed "s/^End Host$/lsf-head   0    ()      ()    ()     ()     ()            (Y)\
 cp /tmp/lsb.hosts ${CONFDIR}/lsbatch/cluster1/configdir/lsb.hosts
 
 echo "$0: Install QRMI hooks"
-cp /distribution/jobstarter.qrmi /opt/lsfce/10.1/linux3.12-glibc2.17-armv8/etc
+mkdir -p /opt/lsfce/conf/hooks
+cp /distribution/jobstarter.qrmi /opt/lsfce/conf/hooks
 # Set JOB_STARTER, REQUEUE_EXIT_VALUES, MAX_JOB_REQUEUE for the
 # normal and interactive queues
 cp ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues.orig
-sed -e "s/^QUEUE_NAME   = normal$/QUEUE_NAME   = normal\nJOB_STARTER  = \/opt\/lsfce\/10.1\/linux3.12-glibc2.17-armv8\/etc\/jobstarter.qrmi\nREQUEUE_EXIT_VALUES = 99\nMAX_JOB_REQUEUE = 3/g" -e "s/^QUEUE_NAME   = interactive$/QUEUE_NAME   = interactive\nJOB_STARTER  = \/opt\/lsfce\/10.1\/linux3.12-glibc2.17-armv8\/etc\/jobstarter.qrmi\nREQUEUE_EXIT_VALUES = 99\nMAX_JOB_REQUEUE = 3/g" ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues > /tmp/lsb.queues
+sed -e "s/^QUEUE_NAME   = normal$/QUEUE_NAME   = normal\nJOB_STARTER  = \/opt\/lsfce\/conf\/hooks\/jobstarter.qrmi\nREQUEUE_EXIT_VALUES = 99\nMAX_JOB_REQUEUE = 3/g" -e "s/^QUEUE_NAME   = interactive$/QUEUE_NAME   = interactive\nJOB_STARTER  = \/opt\/lsfce\/conf\/hooks\/jobstarter.qrmi\nREQUEUE_EXIT_VALUES = 99\nMAX_JOB_REQUEUE = 3/g" ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues > /tmp/lsb.queues
 cp /tmp/lsb.queues ${CONFDIR}/lsbatch/cluster1/configdir/lsb.queues
 
 echo "$0: Copy publically accessible qrmi_config.json in LSF_ENVDIR"
