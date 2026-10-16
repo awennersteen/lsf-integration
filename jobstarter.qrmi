@@ -34,7 +34,6 @@ RES_TYPE_MAP = {
 # Delimiter for list string
 QRMI_LIST_DELIMITER = ","
 
-qrmi_resources = {}
 acquired_resources = {}
 
 # Print message to stderr
@@ -100,7 +99,6 @@ try:
 
                 try:
                     qrmi = QuantumResource.from_config(name, RES_TYPE_MAP[cfg["type"]], build_config_map(name, cfg))
-                    qrmi_resources[name] = qrmi
                     print_debug(f"resource_type = {qrmi.resource_type()}, resource_id={qrmi.resource_id()}")
                     status = qrmi.status()
                     print_debug(f"status = {json.dumps(status.to_dict(), indent=2)}")
