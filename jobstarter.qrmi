@@ -116,7 +116,7 @@ try:
                 except RuntimeError as re:
                     print_error(f"Failed to process request in QRMI for {name}: {re}")
 
-        if len(managed_resources) == 0:
+        if len(acquired_resources) == 0:
             print(
                 f"No specified quantum resources ({resources}) are available",
                 file=sys.stderr,
