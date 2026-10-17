@@ -38,7 +38,7 @@ echo "$0: Install QRMI venv for hooks"
 python3 -m venv /opt/lsfce/pyenv
 source /opt/lsfce/pyenv/bin/activate
 pip install --upgrade pip
-pip install requests dotenv "${QRMI_PACKAGE:-qrmi}"
+pip install requests dotenv "${LSF_QRMI_PACKAGE:-qrmi}"
 
 echo "$0: Set lsfadmin as the owner"
 chown -R lsfadmin:lsfadmin /opt/lsfce

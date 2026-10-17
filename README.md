@@ -71,13 +71,26 @@ export QRMI_PASQAL_CLOUD_PROJECT_ID="<project UUID>"
 export QRMI_PASQAL_CLOUD_AUTH_TOKEN="<access token>"
 ```
 
+To keep the file on the host instead, copy it into the cluster after
+`docker compose up` (run on the host; replace `docker` with `podman` if needed):
+
+```bash
+docker exec lsf-head install -d -o lsfuser -g lsfuser -m 700 /home/lsfuser/.pasqal
+docker cp ~/.pasqal/config lsf-head:/home/lsfuser/.pasqal/config
+docker exec lsf-head chown lsfuser:lsfuser /home/lsfuser/.pasqal/config
+docker exec lsf-head chmod 600 /home/lsfuser/.pasqal/config
+```
+
+`docker compose down -v` deletes this copy together with the home volume.
+
 Export a Pulser sequence with `sequence.to_abstract_repr()` to
 `$HOME/examples/sequence.json`. This file must be visible on the compute nodes.
 The example reads this JSON directly through QRMI and needs no additional Python
 packages.
 
-For example, in an environment with Pulser installed, this creates a four-atom
-test sequence for EMU_FREE or Warden's emulator:
+Pulser is not installed in the containers. For example, this creates a
+four-atom test sequence for EMU_FREE or Warden's emulator. Save it as
+`make_sequence.py` in an environment with Pulser installed:
 
 ```python
 from pathlib import Path
@@ -90,6 +103,17 @@ sequence.declare_channel("rydberg", "rydberg_global")
 sequence.add(Pulse.ConstantPulse(1000, 1, 0, 0), "rydberg")
 sequence.measure("ground-rydberg")
 Path("sequence.json").write_text(sequence.to_abstract_repr())
+```
+
+If you do not have such an environment, use a temporary one on `lsf-head`: as
+`lsfuser`, save the script as `$HOME/examples/make_sequence.py` (`vim` is
+available in the containers), then run it there. Pulser is about 100 MB to
+download:
+
+```bash
+python3 -m venv /tmp/pulser && /tmp/pulser/bin/pip install pulser-core
+cd $HOME/examples && /tmp/pulser/bin/python make_sequence.py
+rm -rf /tmp/pulser
 ```
 
 Use the actual target device and its layout when authoring for hardware. Copy
@@ -132,7 +156,7 @@ docker exec lsf-head /home/lsfuser/pyenv/bin/pip install --force-reinstall /shar
 ```
 
 Replace `qrmi-wheel.whl` with the wheel's full filename. For a fresh installation,
-the build argument `QRMI_PACKAGE` can specify a wheel URL or a wheel path visible
+the build argument `LSF_QRMI_PACKAGE` can specify a wheel URL or a wheel path visible
 inside the container. The default is the PyPI `qrmi` package for Cloud/IBM use.
 
 The containers run MUNGE with a key generated at first startup and shared through

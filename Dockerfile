@@ -2,8 +2,9 @@ FROM ubuntu:24.04
 
 ARG LSF_TAR
 ENV LSF_TAR=${LSF_TAR}
-ARG QRMI_PACKAGE=qrmi
-ENV QRMI_PACKAGE=${QRMI_PACKAGE}
+# Not QRMI_*: the jobstarter forwards QRMI_* variables to QRMI as resource configuration
+ARG LSF_QRMI_PACKAGE=qrmi
+ENV LSF_QRMI_PACKAGE=${LSF_QRMI_PACKAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
