@@ -25,7 +25,7 @@ First, an appropriate version of LSF Community Edition must be downloaded. This 
 
 Once the `lsf-integration` directory has either `lsfsce10.2.0.15-armv8.tar.Z` or `lsfsce10.2.0.15-x86_64.tar.Z`, `podman compose` can be used to create and start the containers as shown below.
 
-```
+```bash
 podman compose build --build-arg LSF_TAR=lsfsce10.2.0.15-armv8.tar.Z
 podman compose up
 ```
@@ -38,7 +38,7 @@ The diagram below shows the container environment. `lsf-head` is a management/lo
 
 After the containers are running, log into `lsf-head` as `lsfuser` as shown below, check the LSF installation with `bhosts`, and run a simple job. `lsf-head` is closed because it is configured not to accept jobs.
 
-```
+```bash
 podman exec -it -u lsfuser -w /home/lsfuser lsf-head bash
 bhosts
 ```
@@ -54,7 +54,7 @@ lsf-head           closed          -      0      0      0      0      0      0
 
 To run a simple job, use the following.
 
-```
+```bash
 bsub -Is hostname
 ```
 
@@ -69,21 +69,21 @@ compute02
 
 A simple quantum application (sampler) can be found in the examples directory. It can be run as shown below. The default delimiter `QRMI_QPU_RESOURCES` is ',' and it can be changed through `QRMI_DELIMITER`. Debug messages are enabled with `LSF_QRMI_DEBUG=1` and disabled with `LSF_QRMI_DEBUG=0` or if `LSF_QRMI_DEBUG` is not defined.
 
-```
+```bash
 QRMI_QPU_RESOURCES=ibm_marrakesh QRMI_IBM_QRS_IAM_APIKEY=$(cat $HOME/.config/qrmi/apikey) LSF_QRMI_DEBUG=1 bsub -Is $HOME/examples/run_sampler.sh
 ```
 
-The example above shows one method to pass the API key through the `QRMI_IBM_QRS_IAM_APIKEY` environment variable. An alternate method is to place API keys in `$HOME/.config/qrmi_config.json`. `$LSF_ENVDIR/qrmi_config.json` contains public information but not private information because it is readable by all users. `$HOME/.config/qrmi_config.json` contains private information such as API keys. The evaluation order is `$LSF_ENVDIR/qrmi_config.json` then `$HOME/.config/qrmi_config.json` and finally environment variables. In other words, environment variables set by the user override values in both `$LSF_ENVDIR/qrmi_config.json` and `$HOME/.config/qrmi_config.json`.
+The example above shows one method to pass the API key through the `QRMI_IBM_QRS_IAM_APIKEY` environment variable. An alternate method is to place API keys in `$HOME/.config/qrmi_config.json`. `$LSF_ENVDIR/qrmi_config.json` contains public information but not private information because it must be readable by all users. `$HOME/.config/qrmi_config.json` contains private information such as API keys. The evaluation order is `$LSF_ENVDIR/qrmi_config.json` then `$HOME/.config/qrmi_config.json` and finally environment variables. In other words, environment variables set by the user override values in both `$LSF_ENVDIR/qrmi_config.json` and `$HOME/.config/qrmi_config.json`.
 
 A bsub script can also be used as shown below. This example assumes `QRMI_IBM_QRS_IAM_APIKEY` has been defined for `ibm_marrakesh` in `$HOME/.config/qrmi_config.json` because `QRMI_IBM_QRS_IAM_APIKEY` is not being defined as an environment variable by the user as in the example above.
 
-```
+```bash
 bsub < $HOME/examples/run_sampler.bsub
 ```
 
 MPI programs can be run using the installed MPICH. To run the MPI "Hello World" program in the `examples` directory, use the following steps:
 
-```
+```bash
 ( cd $HOME/examples; make )
 bsub -Is -n 4 -R "span[ptile=2]" "mpirun $HOME/examples/mpi_hello_world"
 ```
@@ -128,7 +128,171 @@ If `JOB_STARTER` cannot acquire any available resources, it returns a special va
 
 One disadvantage of this design is that `compute01` or `compute02` is assigned to run a quantum job which is not necessary. Because `JOB_STARTER` is lightweight, an alternate design is to define a "quantum" queue that runs jobs on `lsf-head`.
 
-### Environment Variables
+## Pasqal Support
+
+### Pasqal Cloud
+
+The supplied configuration includes `EMU_FREE`. The resource name is the Pasqal
+Cloud backend name. Set the project and credentials in `~/.pasqal/config` as
+`lsfuser` (the home directory is shared with both compute nodes):
+
+```ini
+project_id=<project UUID>
+username=<Pasqal username>
+password=<Pasqal password>
+```
+
+Restrict this file to its owner with `chmod 600 ~/.pasqal/config`. A `token=...`
+entry can be used instead of username/password. The launcher also forwards
+`PASQAL_USERNAME`, `PASQAL_PASSWORD`, and `PASQAL_CONFIG_ROOT`, or the following
+QRMI environment variables:
+
+```bash
+export QRMI_PASQAL_CLOUD_PROJECT_ID="<project UUID>"
+export QRMI_PASQAL_CLOUD_AUTH_TOKEN="<access token>"
+```
+
+To keep the file on the host instead, copy it into the cluster after
+`docker compose up` (run on the host; replace `docker` with `podman` if needed):
+
+```bash
+docker exec lsf-head install -d -o lsfuser -g lsfuser -m 700 /home/lsfuser/.pasqal
+docker cp ~/.pasqal/config lsf-head:/home/lsfuser/.pasqal/config
+docker exec lsf-head chown lsfuser:lsfuser /home/lsfuser/.pasqal/config
+docker exec lsf-head chmod 600 /home/lsfuser/.pasqal/config
+```
+
+`docker compose down -v` deletes this copy together with the home volume.
+
+Export a Pulser sequence with `sequence.to_abstract_repr()` to
+`$HOME/examples/sequence.json`. This file must be visible on the compute nodes.
+The example reads this JSON directly through QRMI and needs no additional Python
+packages.
+
+Pulser is not installed in the containers. For example, this creates a
+four-atom test sequence for EMU_FREE or Warden's emulator. Save it as
+`make_sequence.py` in an environment with Pulser installed:
+
+```python
+from pathlib import Path
+from pulser import Pulse, Register, Sequence
+from pulser.devices import DigitalAnalogDevice
+
+register = Register.square(2, spacing=8, prefix="q").with_automatic_layout(DigitalAnalogDevice)
+sequence = Sequence(register, DigitalAnalogDevice)
+sequence.declare_channel("rydberg", "rydberg_global")
+sequence.add(Pulse.ConstantPulse(1000, 1, 0, 0), "rydberg")
+sequence.measure("ground-rydberg")
+Path("sequence.json").write_text(sequence.to_abstract_repr())
+```
+
+If you do not have such an environment, use a temporary one on `lsf-head`: as
+`lsfuser`, save the script as `$HOME/examples/make_sequence.py` (`vim` is
+available in the containers), then run it there. Pulser is about 100 MB to
+download:
+
+```bash
+python3 -m venv /tmp/pulser && /tmp/pulser/bin/pip install pulser-core
+cd $HOME/examples && /tmp/pulser/bin/python make_sequence.py
+rm -rf /tmp/pulser
+```
+
+Use the actual target device and its layout when authoring for hardware. Copy
+the JSON to `$HOME/examples/sequence.json` in the LSF cluster, then submit:
+
+```bash
+QRMI_QPU_RESOURCES=EMU_FREE bsub -Is \
+    "$HOME/examples/run_pasqal.sh" "$HOME/examples/sequence.json" --runs 100
+```
+
+The example uses the resource published by the launcher, prints the task ID and
+sample counts, and exits nonzero if the task fails or is cancelled. It does not
+acquire a second session. `LSF_QRMI_DEBUG=1` logs environment variable names,
+without printing credentials or acquisition tokens.
+
+### Pasqal Local
+
+The configuration includes `PASQAL_LOCAL` with `QRMI_WARDEN_URL=http://warden:4207`.
+Replace this with the Warden URL reachable from the compute nodes. The pre-hook
+maps LSF's `LSB_JOB_EXECUSER` to the Unix UID and `LSB_JOBID` to `QRMI_JOB_ID`, and
+includes `LSB_JOBINDEX` for array jobs as `job_id[index]`. The jobstarter exports
+this identity and the prepared session to the application.
+
+Warden requires MUNGE authentication and administrator privileges to create and
+revoke sessions. A stock QRMI wheel without the `munge` feature is insufficient;
+both the hook and application need a MUNGE-enabled QRMI build. This setup was
+tested with QRMI 0.26.3. From a QRMI source release, with Rust, Maturin and the
+MUNGE development library installed, build:
+
+```bash
+maturin build --release --features pyo3,pyo3/abi3,munge
+```
+
+Use the resulting wheel in both environments. For an existing container cluster:
+
+```bash
+docker cp /path/to/qrmi-wheel.whl lsf-head:/shared/qrmi-wheel.whl
+docker exec lsf-head /opt/lsfce/pyenv/bin/pip install --force-reinstall /shared/qrmi-wheel.whl
+docker exec lsf-head /home/lsfuser/pyenv/bin/pip install --force-reinstall /shared/qrmi-wheel.whl
+```
+
+Replace `qrmi-wheel.whl` with the wheel's full filename. For a fresh installation,
+the build argument `LSF_QRMI_PACKAGE` can specify a wheel URL or a wheel path visible
+inside the container. The default is the PyPI `qrmi` package for Cloud/IBM use.
+
+The containers run MUNGE with a key generated at first startup and shared through
+the `munge_config` volume. Configure Warden's MUNGE daemon with the same key, or
+copy the existing Warden MUNGE key into that volume as an administrator and
+restart MUNGE on all LSF nodes, for example
+`for c in lsf-head compute01 compute02; do docker exec $c service munge restart; done`.
+Keep the key owned by `munge`, mode `0400`. The
+job user's numeric UID must agree on the LSF and Warden hosts. Warden must allow
+UID `0` as an administrator for the hooks; job users remain ordinary Warden users.
+
+The container setup installs these queue settings for `normal` and `interactive`:
+
+```ini
+PRE_EXEC = /opt/lsfce/conf/hooks/pasqal_local.py acquire
+POST_EXEC = /opt/lsfce/conf/hooks/pasqal_local.py release
+```
+
+It also sets `LSB_PRE_POST_EXEC_USER=root` in `/etc/lsf.sudoers` on every LSF node.
+This applies to queue-level hooks; the application and jobstarter still run as
+the job user. See [IBM's pre/post execution configuration](https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=processing-configuration-modify-pre-post-execution).
+
+The privileged hook uses only `/opt/lsfce/conf/qrmi_config.json` for endpoints,
+ignoring user endpoint and identity overrides. Its script, configuration,
+Python environment and parent directories must remain administrator-owned.
+Python runs in isolated mode. Cleanup reads root-only session records under
+`/run/lsf-qrmi/<job_id>.<index>/sessions.json`; the job reads a separate handoff
+file. A failed release retains its private record for an administrator to retry
+on the execution node with the same `LSB_JOBID` and `LSB_JOBINDEX`. For example,
+to retry cleanup for array element `123[2]` on `compute01`:
+
+```bash
+docker exec -e LSB_JOBID=123 -e LSB_JOBINDEX=2 compute01 \
+    /opt/lsfce/conf/hooks/pasqal_local.py release
+```
+
+Use index `0` for a non-array job. Warden session expiry handles node loss;
+container recreation removes this node-local state.
+
+Submit the same example as Cloud:
+
+```bash
+QRMI_QPU_RESOURCES=PASQAL_LOCAL bsub -Is \
+    "$HOME/examples/run_pasqal.sh" "$HOME/examples/sequence.json" --runs 100
+```
+
+## Tests
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+These tests stub QRMI and require no Cloud credentials or running LSF cluster.
+
+## Environment Variables
 
 | Environment Variable         | Description |
 |------------------------------|-------------|
@@ -144,9 +308,14 @@ One disadvantage of this design is that `compute01` or `compute02` is assigned t
 | `QRMI_JOB_QPU_RESOURCES`     | Resources acquired by QRMI |
 | `QRMI_JOB_QPU_TYPES`         | Acquired resource types |
 
-### Links
+## Links
+
+[Setup with Docker, Podman (rootful or rootless) and Windows/WSL2](SETUP.md)
 
 [IBM LFS Community Edition (free after a simple registration process)](https://early-access.ibm.com/software/support/trial/cst/programwebsite.wss?siteId=680&h=&tabId=&_gl=1*18pgo3p*_ga*ODgwNjAzMzMzLjE3OTEyOTM1ODI.*_ga_FYECCCS21D*czE3OTEyOTM1ODEkbzEkZzEkdDE3OTEyOTM2NjUkajQ4JGwwJGgw)
+
 [QRMI Project](https://github.com/qiskit-community/qrmi/)
+
 [QRMI Community Projects](https://github.com/qrmi-community/)
+
 [QRMI Community Documentation](https://qrmi-community.github.io/)

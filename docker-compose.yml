@@ -45,6 +45,7 @@ services:
     container_name: lsf-head
     hostname: lsf-head
     privileged: true
+    init: true # Reaps stopped daemons, so "service munge restart" works
     ports:
       - "2222:22"
     environment:
@@ -58,6 +59,7 @@ services:
       - ./shared:/shared:z
       - ssh_keys:/root/.ssh:ro # Mounts keys read-only to root's home directory
       - lsf_home:/home
+      - munge_config:/etc/munge
     networks:
       lsfnet:
         ipv4_address: 10.10.10.10
@@ -69,6 +71,7 @@ services:
     container_name: compute01
     hostname: compute01
     privileged: true
+    init: true
     environment:
       NODE_ROLE: compute
       LSF_CLUSTER_NAME: cluster1
@@ -82,6 +85,7 @@ services:
       - ./shared:/shared:z
       - ssh_keys:/root/.ssh:ro
       - lsf_home:/home
+      - munge_config:/etc/munge
     networks:
       lsfnet:
         ipv4_address: 10.10.10.11
@@ -93,6 +97,7 @@ services:
     container_name: compute02
     hostname: compute02
     privileged: true
+    init: true
     environment:
       NODE_ROLE: compute
       LSF_CLUSTER_NAME: cluster1
@@ -106,12 +111,14 @@ services:
       - ./shared:/shared:z
       - ssh_keys:/root/.ssh:ro
       - lsf_home:/home
+      - munge_config:/etc/munge
     networks:
       lsfnet:
         ipv4_address: 10.10.10.12
 
 volumes:
   opt_install:
+  munge_config:
   ssh_keys:
   lsf_home:
 

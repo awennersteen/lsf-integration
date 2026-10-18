@@ -12,11 +12,12 @@ cp /distribution/qrmi_config.json.user /home/lsfuser/.config/qrmi_config.json
 chmod 600 /home/lsfuser/.config/qrmi_config.json
 # Examples
 cp -r /distribution/examples /home/lsfuser
+chmod +x /home/lsfuser/examples/*.sh
 # venv
 python3 -m venv /home/lsfuser/pyenv
 source /home/lsfuser/pyenv/bin/activate
 pip install --upgrade pip
-pip install dotenv numpy requests qrmi numpy qiskit qiskit_ibm_runtime
+pip install dotenv numpy requests "${LSF_QRMI_PACKAGE:-qrmi}" qiskit qiskit_ibm_runtime
 chown -R lsfuser:lsfuser /home/lsfuser
 
 echo "$0: Configure lsfadmin and lsfuser to source profile.lsf in .bashrc"
