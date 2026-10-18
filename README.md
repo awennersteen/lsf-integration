@@ -162,7 +162,9 @@ inside the container. The default is the PyPI `qrmi` package for Cloud/IBM use.
 The containers run MUNGE with a key generated at first startup and shared through
 the `munge_config` volume. Configure Warden's MUNGE daemon with the same key, or
 copy the existing Warden MUNGE key into that volume as an administrator and
-restart MUNGE on all LSF nodes. Keep the key owned by `munge`, mode `0400`. The
+restart MUNGE on all LSF nodes, for example
+`for c in lsf-head compute01 compute02; do docker exec $c service munge restart; done`.
+Keep the key owned by `munge`, mode `0400`. The
 job user's numeric UID must agree on the LSF and Warden hosts. Warden must allow
 UID `0` as an administrator for the hooks; job users remain ordinary Warden users.
 

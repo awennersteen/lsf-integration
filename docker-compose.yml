@@ -46,6 +46,7 @@ services:
     container_name: lsf-head
     hostname: lsf-head
     privileged: true
+    init: true # Reaps stopped daemons, so "service munge restart" works
     ports:
       - "2222:22"
     environment:
@@ -72,6 +73,7 @@ services:
     container_name: compute01
     hostname: compute01
     privileged: true
+    init: true
     environment:
       NODE_ROLE: compute
       LSF_CLUSTER_NAME: cluster1
@@ -98,6 +100,7 @@ services:
     container_name: compute02
     hostname: compute02
     privileged: true
+    init: true
     environment:
       NODE_ROLE: compute
       LSF_CLUSTER_NAME: cluster1
