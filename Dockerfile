@@ -23,9 +23,7 @@ RUN apt-get update && \
         python3-venv \
         default-jre \
         ed \
-        less \
-        mpich \
-        libmpich-dev && \
+        less && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /var/run/sshd
@@ -51,17 +49,20 @@ COPY ${LSF_TAR} /distribution/
 
 COPY docker-entrypoint.sh /usr/local/bin
 COPY install-lsf.sh /usr/local/bin
+COPY install-mpich.sh /usr/local/bin
 COPY configure-lsf.sh /usr/local/bin
 COPY configure-user.sh /usr/local/bin
 
 RUN chmod +x \
     /usr/local/bin/docker-entrypoint.sh \
     /usr/local/bin/install-lsf.sh \
+    /usr/local/bin/install-mpich.sh \
     /usr/local/bin/configure-lsf.sh \
     /usr/local/bin/configure-user.sh
 
 COPY jobstarter.qrmi /distribution
 COPY qrmi_config.json /distribution
+COPY qrmi_config.json.user /distribution
 
 COPY examples/ /distribution/examples/
 

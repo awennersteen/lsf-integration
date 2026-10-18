@@ -5,7 +5,7 @@ services:
     container_name: lsf_ssh_init
     command: >
       sh -c "apk add --no-cache openssh-client &&
-             # 1. Initialize Root SSH Keys
+             # Initialize Root SSH Keys
              if [ ! -f /shared_ssh/id_ed25519 ]; then
                ssh-keygen -t ed25519 -N '' -f /shared_ssh/id_ed25519 -C 'lsf-cluster-root-key' &&
                cp /shared_ssh/id_ed25519.pub /shared_ssh/authorized_keys &&
@@ -13,31 +13,30 @@ services:
                chmod 600 /shared_ssh/*;
              fi &&
              
-             # 2. Initialize lsfadmin Shared Home & SSH (Fix ownership to UID/GID 1001)
-             mkdir -p /lsfadmin_home/.ssh &&
-             if [ ! -f /lsfadmin_home/.ssh/id_ed25519 ]; then
-               ssh-keygen -t ed25519 -N '' -f /lsfadmin_home/.ssh/id_ed25519 -C 'lsfadmin-key' &&
-               cp /lsfadmin_home/.ssh/id_ed25519.pub /lsfadmin_home/.ssh/authorized_keys;
+             # Initialize lsfadmin shared home & SSH (Fix ownership to UID/GID 1001)
+             mkdir -p /home/lsfadmin/.ssh &&
+             if [ ! -f /home/lsfadmin/.ssh/id_ed25519 ]; then
+               ssh-keygen -t ed25519 -N '' -f /home/lsfadmin/.ssh/id_ed25519 -C 'lsfadmin-key' &&
+               cp /home/lsfadmin/.ssh/id_ed25519.pub /home/lsfadmin/.ssh/authorized_keys;
              fi &&
-             chown -R 1001:1001 /lsfadmin_home &&
-             chmod 750 /lsfadmin_home &&
-             chmod 700 /lsfadmin_home/.ssh &&
-             chmod 600 /lsfadmin_home/.ssh/* &&
+             chown -R 1001:1001 /home/lsfadmin &&
+             chmod 750 /home/lsfadmin &&
+             chmod 700 /home/lsfadmin/.ssh &&
+             chmod 600 /home/lsfadmin/.ssh/* &&
 
-             # 3. Initialize lsfuser Shared Home & SSH (Fix ownership to UID/GID 1002)
-             mkdir -p /lsfuser_home/.ssh &&
-             if [ ! -f /lsfuser_home/.ssh/id_ed25519 ]; then
-               ssh-keygen -t ed25519 -N '' -f /lsfuser_home/.ssh/id_ed25519 -C 'lsfuser-key' &&
-               cp /lsfuser_home/.ssh/id_ed25519.pub /lsfuser_home/.ssh/authorized_keys;
+             # 3. Initialize lsfuser shared home & SSH (Fix ownership to UID/GID 1002)
+             mkdir -p /home/lsfuser/.ssh &&
+             if [ ! -f /home/lsfuser/.ssh/id_ed25519 ]; then
+               ssh-keygen -t ed25519 -N '' -f /home/lsfuser/.ssh/id_ed25519 -C 'lsfuser-key' &&
+               cp /home/lsfuser/.ssh/id_ed25519.pub /home/lsfuser/.ssh/authorized_keys;
              fi &&
-             chown -R 1002:1002 /lsfuser_home &&
-             chmod 750 /lsfuser_home &&
-             chmod 700 /lsfuser_home/.ssh &&
-             chmod 600 /lsfuser_home/.ssh/*"
+             chown -R 1002:1002 /home/lsfuser &&
+             chmod 750 /home/lsfuser &&
+             chmod 700 /home/lsfuser/.ssh &&
+             chmod 600 /home/lsfuser/.ssh/*"
     volumes:
       - ssh_keys:/shared_ssh
-      - lsfadmin_home:/lsfadmin_home
-      - lsfuser_home:/lsfuser_home
+      - lsf_home:/home
 
   lsf-head:
     build:
@@ -55,11 +54,10 @@ services:
       ssh-generator:
         condition: service_completed_successfully # Ensures keys and homes exist before starting
     volumes:
-      - lsf_install:/opt/lsfce
-      - shared_fs:/shared
+      - opt_install:/opt
+      - ./shared:/shared:z
       - ssh_keys:/root/.ssh:ro # Mounts keys read-only to root's home directory
-      - lsfadmin_home:/home/lsfadmin
-      - lsfuser_home:/home/lsfuser
+      - lsf_home:/home
     networks:
       lsfnet:
         ipv4_address: 10.10.10.10
@@ -80,11 +78,10 @@ services:
       lsf-head:
         condition: service_started
     volumes:
-      - lsf_install:/opt/lsfce
-      - shared_fs:/shared
+      - opt_install:/opt
+      - ./shared:/shared:z
       - ssh_keys:/root/.ssh:ro
-      - lsfadmin_home:/home/lsfadmin
-      - lsfuser_home:/home/lsfuser
+      - lsf_home:/home
     networks:
       lsfnet:
         ipv4_address: 10.10.10.11
@@ -105,21 +102,18 @@ services:
       lsf-head:
         condition: service_started
     volumes:
-      - lsf_install:/opt/lsfce
-      - shared_fs:/shared
+      - opt_install:/opt
+      - ./shared:/shared:z
       - ssh_keys:/root/.ssh:ro
-      - lsfadmin_home:/home/lsfadmin
-      - lsfuser_home:/home/lsfuser
+      - lsf_home:/home
     networks:
       lsfnet:
         ipv4_address: 10.10.10.12
 
 volumes:
-  lsf_install:
-  shared_fs:
+  opt_install:
   ssh_keys:
-  lsfadmin_home:  # Shared volume for lsfadmin
-  lsfuser_home:   # Shared volume for lsfuser
+  lsf_home:
 
 networks:
   lsfnet:

@@ -1,0 +1,7 @@
+#!/bin/bash
+#BSUB -J mpi_hello_world
+#BSUB -n 4                      # Request 4 total tasks/slots
+#BSUB -R "span[ptile=2]"        # Forces allocation across two host nodes
+#BSUB -Is
+
+mpirun $HOME/examples/mpi_hello_world

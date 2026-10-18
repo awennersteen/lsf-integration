@@ -1,0 +1,25 @@
+{
+  "resources": [
+    {
+      "name": "ibm_marrakesh",
+      "type": "qiskit-runtime-service",
+      "environment": {
+        "QRMI_IBM_QRS_IAM_APIKEY": ""
+      }
+    },
+    {
+      "name": "ibm_fez",
+      "type": "qiskit-runtime-service",
+      "environment": {
+        "QRMI_IBM_QRS_IAM_APIKEY": ""
+      }
+    },
+    {
+      "name": "ibm_kingston",
+      "type": "qiskit-runtime-service",
+      "environment": {
+        "QRMI_IBM_QRS_IAM_APIKEY": ""
+      }
+    }
+  ]
+}

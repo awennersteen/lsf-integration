@@ -19,7 +19,7 @@ cp ${CONFDIR}/lsbatch/cluster1/configdir/lsb.hosts ${CONFDIR}/lsbatch/cluster1/c
 sed "s/^End Host$/lsf-head   0    ()      ()    ()     ()     ()            (Y)\nEnd Host/g" ${CONFDIR}/lsbatch/cluster1/configdir/lsb.hosts > /tmp/lsb.hosts
 cp /tmp/lsb.hosts ${CONFDIR}/lsbatch/cluster1/configdir/lsb.hosts
 
-echo "$0: Install QRMI hooks"
+echo "$0: Install QRMI hook"
 mkdir -p /opt/lsfce/conf/hooks
 cp /distribution/jobstarter.qrmi /opt/lsfce/conf/hooks
 # Set JOB_STARTER, REQUEUE_EXIT_VALUES, MAX_JOB_REQUEUE for the
