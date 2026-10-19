@@ -1,0 +1,12 @@
+#!/bin/bash
+#BSUB -J qrmi_sampler
+#BSUB -W 00:30
+#BSUB -o qrmi_sampler.%J.out
+#BSUB -e qrmi_sampler.%J.err
+#BSUB -q interactive
+#BSUB -Is
+#BSUB -env "all, QRMI_QPU_RESOURCES=ibm_kingston, LSF_QRMI_DEBUG=1"
+
+# Run application
+source /home/lsfuser/pyenv/bin/activate
+python3 /home/lsfuser/examples/sampler.py

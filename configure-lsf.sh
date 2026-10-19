@@ -19,7 +19,7 @@ cp ${CONFDIR}/lsbatch/cluster1/configdir/lsb.hosts ${CONFDIR}/lsbatch/cluster1/c
 sed "s/^End Host$/lsf-head   0    ()      ()    ()     ()     ()            (Y)\nEnd Host/g" ${CONFDIR}/lsbatch/cluster1/configdir/lsb.hosts > /tmp/lsb.hosts
 cp /tmp/lsb.hosts ${CONFDIR}/lsbatch/cluster1/configdir/lsb.hosts
 
-echo "$0: Install QRMI hooks"
+echo "$0: Install QRMI hook"
 mkdir -p /opt/lsfce/conf/hooks
 cp /distribution/jobstarter.qrmi /distribution/pasqal_local.py /opt/lsfce/conf/hooks
 chmod 755 /opt/lsfce/conf/hooks/jobstarter.qrmi /opt/lsfce/conf/hooks/pasqal_local.py
