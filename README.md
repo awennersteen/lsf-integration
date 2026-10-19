@@ -104,7 +104,7 @@ Two MPI ranks should run on `compute01` and two on `compute02`.
 
 ### Installation and Configuration Scripts
 
-`docker-entrypoint.sh` orchestrates the bring up of the containers which share `/opt/lsfce`, `/shared`, `/home/lsfadmin`, and `/home/lsfuser`.
+`docker-entrypoint.sh` orchestrates the bring up of the containers which share `/opt` (LSF and MPICH), `/home`, and `/shared` (the `shared` directory of this repository).
 
 `install-lsf.sh` installs LSF in `/opt/lsfce`. The script relies on `LSF_TAR` to determine which LSF download to use (`lsfsce10.2.0.15-armv8.tar.Z` or `lsfsce10.2.0.15-x86_64.tar.Z`).
 
