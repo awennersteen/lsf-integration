@@ -70,7 +70,7 @@ compute02
 A simple quantum application (sampler) can be found in the examples directory. It can be run as shown below. The default delimiter `QRMI_QPU_RESOURCES` is ',' and it can be changed through `QRMI_DELIMITER`. Debug messages are enabled with `LSF_QRMI_DEBUG=1` and disabled with `LSF_QRMI_DEBUG=0` or if `LSF_QRMI_DEBUG` is not defined.
 
 ```bash
-QRMI_QPU_RESOURCES=ibm_marrakesh QRMI_IBM_QRS_IAM_APIKEY=$(cat $HOME/.config/qrmi/apikey) LSF_QRMI_DEBUG=1 bsub -Is $HOME/examples/run_sampler.sh
+QRMI_QPU_RESOURCES=ibm_marrakesh QRMI_IBM_QRS_IAM_APIKEY=... LSF_QRMI_DEBUG=1 bsub -Is $HOME/examples/run_sampler.sh
 ```
 
 The example above shows one method to pass the API key through the `QRMI_IBM_QRS_IAM_APIKEY` environment variable. An alternate method is to place API keys in `$HOME/.config/qrmi_config.json`. `$LSF_ENVDIR/qrmi_config.json` contains public information but not private information because it must be readable by all users. `$HOME/.config/qrmi_config.json` contains private information such as API keys. The evaluation order is `$LSF_ENVDIR/qrmi_config.json` then `$HOME/.config/qrmi_config.json` and finally environment variables. In other words, environment variables set by the user override values in both `$LSF_ENVDIR/qrmi_config.json` and `$HOME/.config/qrmi_config.json`.
