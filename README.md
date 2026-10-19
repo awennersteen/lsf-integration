@@ -239,17 +239,12 @@ includes `LSB_JOBINDEX` for array jobs as `job_id[index]`. The jobstarter export
 this identity and the prepared session to the application.
 
 Warden requires MUNGE authentication and administrator privileges to create and
-revoke sessions. A stock QRMI wheel without the `munge` feature is insufficient;
-both the hook and application need a MUNGE-enabled QRMI build. This setup was
-tested with QRMI 0.26.3. From a QRMI source release, with Rust, Maturin and the
-MUNGE development library installed, build:
+revoke sessions. QRMI 0.26.1 and later load the MUNGE library at runtime, so the
+PyPI `qrmi` package installed by default works with the MUNGE daemon in the
+containers. This setup was tested with QRMI 0.26.3.
 
-```bash
-maturin build --release --features pyo3,pyo3/abi3,munge
-```
-
-Use the resulting wheel in both environments. For an existing container cluster,
-copy it into `./shared` next to `docker-compose.yml`, where all nodes see it as `/shared`:
+To use another QRMI build, for an existing container cluster, copy the wheel into
+`./shared` next to `docker-compose.yml`, where all nodes see it as `/shared`:
 
 ```bash
 cp /path/to/qrmi-wheel.whl shared/
@@ -259,7 +254,7 @@ docker exec lsf-head /home/lsfuser/pyenv/bin/pip install --force-reinstall /shar
 
 Replace `qrmi-wheel.whl` with the wheel's full filename. For a fresh installation,
 the build argument `LSF_QRMI_PACKAGE` can specify a wheel URL or a wheel path visible
-inside the container, such as `/shared/qrmi-wheel.whl`. The default is the PyPI `qrmi` package for Cloud/IBM use.
+inside the container, such as `/shared/qrmi-wheel.whl`.
 
 The containers run MUNGE with a key generated at first startup and shared through
 the `munge_config` volume. Configure Warden's MUNGE daemon with the same key, or
