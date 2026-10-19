@@ -213,7 +213,27 @@ without printing credentials or acquisition tokens.
 ### Pasqal Local
 
 The configuration includes `PASQAL_LOCAL` with `QRMI_WARDEN_URL=http://warden:4207`.
-Replace this with the Warden URL reachable from the compute nodes. The pre-hook
+Replace this with the Warden URL reachable from the compute nodes.
+
+If Warden runs in a container on another container network, connect the LSF
+containers to that network. List the networks of the Warden container (here
+`warden`; use the name shown by `docker ps`):
+
+```bash
+docker inspect warden --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}'
+```
+
+Then connect the LSF containers to that network and check the connection:
+
+```bash
+for c in lsf-head compute01 compute02; do docker network connect <network> $c; done
+docker exec compute01 curl -s http://warden:4207/accessible
+```
+
+With Podman, use `podman` instead of `docker`. The Warden container name then
+resolves from the LSF nodes, so `QRMI_WARDEN_URL` can use it. Recreating the
+containers (`docker compose down` and `up`) removes the connection; run the
+loop again. The pre-hook
 maps LSF's `LSB_JOB_EXECUSER` to the Unix UID and `LSB_JOBID` to `QRMI_JOB_ID`, and
 includes `LSB_JOBINDEX` for array jobs as `job_id[index]`. The jobstarter exports
 this identity and the prepared session to the application.
