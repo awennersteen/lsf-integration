@@ -104,7 +104,7 @@ Two MPI ranks should run on `compute01` and two on `compute02`.
 
 ### Installation and Configuration Scripts
 
-`docker-entrypoint.sh` orchestrates the bring up of the containers which share `/opt` (LSF and MPICH), `/home`, and `/shared` (the `shared` directory of this repository).
+`docker-entrypoint.sh` orchestrates the bring up of the containers which share `/opt` (LSF and MPICH), `/home`, and `/shared`. `/shared` is bind-mounted from `./shared` next to `docker-compose.yml`, which Compose creates on first start.
 
 `install-lsf.sh` installs LSF in `/opt/lsfce`. The script relies on `LSF_TAR` to determine which LSF download to use (`lsfsce10.2.0.15-armv8.tar.Z` or `lsfsce10.2.0.15-x86_64.tar.Z`).
 
@@ -248,17 +248,18 @@ MUNGE development library installed, build:
 maturin build --release --features pyo3,pyo3/abi3,munge
 ```
 
-Use the resulting wheel in both environments. For an existing container cluster:
+Use the resulting wheel in both environments. For an existing container cluster,
+copy it into `./shared` next to `docker-compose.yml`, where all nodes see it as `/shared`:
 
 ```bash
-docker cp /path/to/qrmi-wheel.whl lsf-head:/shared/qrmi-wheel.whl
+cp /path/to/qrmi-wheel.whl shared/
 docker exec lsf-head /opt/lsfce/pyenv/bin/pip install --force-reinstall /shared/qrmi-wheel.whl
 docker exec lsf-head /home/lsfuser/pyenv/bin/pip install --force-reinstall /shared/qrmi-wheel.whl
 ```
 
 Replace `qrmi-wheel.whl` with the wheel's full filename. For a fresh installation,
 the build argument `LSF_QRMI_PACKAGE` can specify a wheel URL or a wheel path visible
-inside the container. The default is the PyPI `qrmi` package for Cloud/IBM use.
+inside the container, such as `/shared/qrmi-wheel.whl`. The default is the PyPI `qrmi` package for Cloud/IBM use.
 
 The containers run MUNGE with a key generated at first startup and shared through
 the `munge_config` volume. Configure Warden's MUNGE daemon with the same key, or
